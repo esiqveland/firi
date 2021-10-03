@@ -14,7 +14,7 @@ import (
 
 var secretKeyEnv = mustGetSecret("SECRET_KEY")
 var clientIdEnv = mustGetEnv("CLIENT_ID")
-var apiKeyEnv = mustGetEnv("APIKEY")
+var apiKeyEnv = mustGetEnv("API_KEY")
 
 func main() {
 	err := runMain()

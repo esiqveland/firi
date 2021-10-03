@@ -4,8 +4,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-	"hash"
+	"encoding/json"
+	"strconv"
 	"time"
 )
 
@@ -34,25 +34,26 @@ type signer struct {
 func (s *signer) Sign(ts time.Time) (*SignedData, error) {
 	validForMillis := s.validForMillis
 
-	h := hmac.New(func() hash.Hash {
-		return sha256.New()
-	}, s.secretKey)
+	type body struct {
+		Timestamp      string `json:"timestamp"`
+		ValidForMillis int64  `json:"validity"`
+	}
+	data, err := json.Marshal(&body{
+		Timestamp: strconv.FormatInt(ts.Unix(), 10),
+		//Timestamp:      ts.Unix(),
+		ValidForMillis: validForMillis,
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	//type body struct {
-	//	Timestamp      string `json:"timestamp"`
-	//	ValidForMillis int64 `json:"validity"`
-	//}
-	//data, err := json.Marshal(&body{
-	//	Timestamp:      strconv.FormatInt(ts.Unix(), 10),
-	//	//Timestamp:      ts.Unix(),
-	//	ValidForMillis: validForMillis,
-	//})
-	//if err != nil {
-	//	return nil, err
-	//}
+	h := hmac.New(sha256.New, s.secretKey)
+	_, err = h.Write(data)
+	if err != nil {
+		return nil, err
+	}
 
-	data := []byte(fmt.Sprintf("%v%v", ts.Unix(), s.apiKey))
-	sig := hex.EncodeToString(h.Sum(data))
+	sig := hex.EncodeToString(h.Sum(nil))
 	signed := &SignedData{
 		ClientID:       s.clientId,
 		Signature:      sig,
