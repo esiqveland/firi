@@ -7,9 +7,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/esiqveland/miraiex/pkg/miraiexclient"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/esiqveland/firi/pkg/firiclient"
 )
 
 var secretKeyEnv = mustGetSecret("SECRET_KEY")
@@ -33,16 +34,16 @@ func runMain() error {
 	root := logger.WithContext(context.Background())
 
 	httpclient := &http.Client{Timeout: time.Second * 5}
-	signer := miraiexclient.NewSigner(
+	signer := firiclient.NewSigner(
 		clientIdEnv,
 		apiKeyEnv,
 		secretKeyEnv,
 	)
-	publicClient := miraiexclient.New(
+	publicClient := firiclient.New(
 		mustParseUrl("https://api.miraiex.com"),
 		httpclient.Do,
 	)
-	c := miraiexclient.NewAuthenticatedClient(
+	c := firiclient.NewAuthenticatedClient(
 		mustParseUrl("https://api.miraiex.com"),
 		signer,
 		publicClient,

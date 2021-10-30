@@ -1,4 +1,4 @@
-package miraiexclient
+package firiclient
 
 import (
 	"crypto/hmac"

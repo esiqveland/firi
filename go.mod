@@ -1,4 +1,4 @@
-module github.com/esiqveland/miraiex
+module github.com/esiqveland/firi
 
 go 1.16
 
