@@ -13,6 +13,16 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type MarketID string
+
+const (
+	BTCNOK MarketID = "BTCNOK"
+	ETHNOK MarketID = "ETHNOK"
+	DAINOK MarketID = "DAINOK"
+	ADANOK MarketID = "ADANOK"
+	LTCNOK MarketID = "LTCNOK"
+)
+
 type Doer func(*http.Request) (*http.Response, error)
 
 func New(base *url.URL, httpClient Doer) *publicClient {
@@ -22,21 +32,6 @@ func New(base *url.URL, httpClient Doer) *publicClient {
 	}
 }
 
-func NewAuthenticatedClient(base *url.URL, s *signer, publicClient *publicClient, doer Doer) *authClient {
-	return &authClient{
-		publicClient: publicClient,
-		baseurl:      base,
-		doer:         doer,
-		signer:       s,
-	}
-}
-
-type authClient struct {
-	*publicClient
-	signer  *signer
-	baseurl *url.URL
-	doer    Doer
-}
 type publicClient struct {
 	baseurl *url.URL
 	doer    Doer
@@ -145,8 +140,8 @@ func (c *publicClient) GetMarketTickersV2(ctx context.Context) (MarketTickers, e
 }
 
 // GET /v2/markets/:market/ticker
-func (c *publicClient) GetMarketTickerV2(ctx context.Context, marketId string) (*MarketTicker, error) {
-	uri, err := c.baseurl.Parse("/v2/markets/" + marketId + "/ticker")
+func (c *publicClient) GetMarketTickerV2(ctx context.Context, marketId MarketID) (*MarketTicker, error) {
+	uri, err := c.baseurl.Parse("/v2/markets/" + string(marketId) + "/ticker")
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +161,7 @@ func (c *publicClient) GetMarketTickerV2(ctx context.Context, marketId string) (
 	if resp.StatusCode == 200 {
 		m := MarketTicker{}
 		err = json.Unmarshal(body, &m)
-		m.MarketID = marketId
+		m.MarketID = string(marketId)
 		return &m, err
 	} else {
 		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
@@ -181,34 +176,6 @@ type Balance struct {
 	Low      float64 `json:"low,string"`
 	Change   float64 `json:"change,string"`
 	Volume   float64 `json:"volume,string"`
-}
-
-// GET /v2/balances
-func (c *authClient) GetBalancesV2(ctx context.Context) (*Balances, error) {
-	uri, err := c.baseurl.Parse("/v2/balances")
-	if err != nil {
-		return nil, err
-	}
-	req, err := http.NewRequestWithContext(ctx, "GET", uri.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	resp, err := c.doSigned(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode == 200 {
-		m := Balances{}
-		err = json.Unmarshal(body, &m)
-		return &m, err
-	} else {
-		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
-	}
 }
 
 type Bids []ordersJsonList
@@ -260,8 +227,8 @@ type HistoricOrder struct {
 }
 
 // GET /v2/markets/:market/history
-func (c *publicClient) GetMarketTradeHistoryV2(ctx context.Context, marketId string) (*TradeHistory, error) {
-	uri, err := c.baseurl.Parse("/v2/markets/" + marketId + "/history")
+func (c *publicClient) GetMarketTradeHistoryV2(ctx context.Context, marketId MarketID) (*TradeHistory, error) {
+	uri, err := c.baseurl.Parse("/v2/markets/" + string(marketId) + "/history")
 	if err != nil {
 		return nil, err
 	}
@@ -288,8 +255,8 @@ func (c *publicClient) GetMarketTradeHistoryV2(ctx context.Context, marketId str
 }
 
 // GET /v2/markets/:market/depth
-func (c *publicClient) GetOrderbookV2(ctx context.Context, marketId string) (*Orderbook, error) {
-	uri, err := c.baseurl.Parse("/v2/markets/" + marketId + "/depth")
+func (c *publicClient) GetOrderbookV2(ctx context.Context, marketId MarketID) (*Orderbook, error) {
+	uri, err := c.baseurl.Parse("/v2/markets/" + string(marketId) + "/depth")
 	if err != nil {
 		return nil, err
 	}
@@ -337,24 +304,6 @@ func (c *publicClient) GetOrderbookV2(ctx context.Context, marketId string) (*Or
 	} else {
 		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
 	}
-}
-
-func (c *authClient) doSigned(r *http.Request) (*http.Response, error) {
-	now := time.Now()
-	sig, err := c.signer.Sign(now)
-	if err != nil {
-		return nil, err
-	}
-	r.Header.Set("miraiex-user-clientid", sig.ClientID)
-	r.Header.Set("miraiex-user-signature", sig.Signature)
-	uri := *r.URL
-	q := uri.Query()
-	q.Set("timestamp", strconv.FormatInt(sig.Timestamp.Unix(), 10))
-	q.Set("validity", strconv.FormatInt(sig.ValidForMillis, 10))
-	uri.RawQuery = q.Encode()
-	r.URL = &uri
-
-	return c.do(r)
 }
 
 func (c *publicClient) do(r *http.Request) (*http.Response, error) {
