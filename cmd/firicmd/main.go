@@ -50,47 +50,65 @@ func runMain() error {
 		httpclient.Do,
 	)
 
-	marketsV1, err := c.GetMarketsV1(root)
-	if err != nil {
-		return err
-	}
-	log.Printf("MarketsV1=%+v", marketsV1)
-
-	marketsV2, err := c.GetMarketsV2(root)
-	if err != nil {
-		return err
-	}
-	log.Printf("MarketsV2=%+v", marketsV2)
-
-	orderbook, err := c.GetOrderbookV2(root, "BTCNOK")
-	if err != nil {
-		return err
-	}
-	log.Printf("OrderbookV2=%+v", orderbook)
-
-	allTickersV2, err := c.GetMarketTickersV2(root)
-	if err != nil {
-		return err
-	}
-	log.Printf("allTickersV2=%+v", allTickersV2)
-
-	tickerBTCNOK, err := c.GetMarketTickerV2(root, "BTCNOK")
-	if err != nil {
-		return err
-	}
-	log.Printf("tickerBTCNOK=%+v", tickerBTCNOK)
-
-	historyBTCNOK, err := c.GetMarketTradeHistoryV2(root, "BTCNOK")
-	if err != nil {
-		return err
-	}
-	log.Printf("historyBTCNOK=%+v", historyBTCNOK)
+	//marketsV1, err := c.GetMarketsV1(root)
+	//if err != nil {
+	//	return err
+	//}
+	//log.Printf("MarketsV1=%+v", marketsV1)
+	//
+	//marketsV2, err := c.GetMarketsV2(root)
+	//if err != nil {
+	//	return err
+	//}
+	//log.Printf("MarketsV2=%+v", marketsV2)
+	//
+	//orderbook, err := c.GetOrderbookV2(root, "BTCNOK")
+	//if err != nil {
+	//	return err
+	//}
+	//log.Printf("OrderbookV2=%+v", orderbook)
+	//
+	//allTickersV2, err := c.GetMarketTickersV2(root)
+	//if err != nil {
+	//	return err
+	//}
+	//log.Printf("allTickersV2=%+v", allTickersV2)
+	//
+	//tickerBTCNOK, err := c.GetMarketTickerV2(root, "BTCNOK")
+	//if err != nil {
+	//	return err
+	//}
+	//log.Printf("tickerBTCNOK=%+v", tickerBTCNOK)
+	//
+	//historyBTCNOK, err := c.GetMarketTradeHistoryV2(root, "BTCNOK")
+	//if err != nil {
+	//	return err
+	//}
+	//log.Printf("historyBTCNOK=%+v", historyBTCNOK)
 
 	bal, err := c.GetBalancesV2(root)
 	if err != nil {
 		return err
 	}
 	log.Printf("Balances=%+v", bal)
+
+	act, err := c.GetActiveOrders(root)
+	if err != nil {
+		return err
+	}
+	log.Printf("GetActiveOrders=%+v", act)
+
+	filled, err := c.GetAllFilledAndClosedOrders(root)
+	if err != nil {
+		return err
+	}
+	log.Printf("GetAllFilledAndClosedOrders=%+v", filled)
+
+	tradesHistory, err := c.GetAllTrades(root)
+	if err != nil {
+		return err
+	}
+	log.Printf("GetAllTrades=%+v", tradesHistory)
 
 	return nil
 }
