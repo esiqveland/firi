@@ -3,6 +3,7 @@ package firiclient
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +13,37 @@ import (
 
 	"github.com/rs/zerolog"
 )
+
+type OrderType string
+
+const (
+	Bid OrderType = "bid"
+	Ask OrderType = "ask"
+)
+
+var orderTypes = map[string]OrderType{
+	"bid": Bid,
+	"ask": Ask,
+}
+
+func (o OrderType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(o))
+}
+
+func (o *OrderType) UnmarshalJSON(b []byte) error {
+	var s string
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return err
+	}
+
+	val, ok := orderTypes[s]
+	if !ok {
+		return errors.New("json: invalid orderType value=" + s)
+	}
+	*o = val
+	return nil
+}
 
 type MarketID string
 
@@ -219,7 +251,7 @@ type orderbookJson struct {
 
 type TradeHistory []HistoricOrder
 type HistoricOrder struct {
-	OrderType string    `json:"type"`
+	OrderType OrderType `json:"type"`
 	Amount    float64   `json:"amount,string"`
 	Price     float64   `json:"price,string"`
 	Total     float64   `json:"total,string"`

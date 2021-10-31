@@ -31,7 +31,7 @@ type authClient struct {
 type ActiveOrder struct {
 	Id        int64     `json:"id"`
 	Market    string    `json:"market"`
-	Type      string    `json:"type"`
+	Type      OrderType `json:"type"`
 	Price     float64   `json:"price,string"`
 	Amount    float64   `json:"amount,string"`
 	Remaining float64   `json:"remaining,string"`
@@ -202,10 +202,10 @@ type CreateOrderResponse struct {
 	Id int64 `json:"id"`
 }
 type CreateOrderRequest struct {
-	Market string  `json:"market"`
-	Type   string  `json:"type"`
-	Price  float64 `json:"price,string"`
-	Amount float64 `json:"amount,string"`
+	Market string    `json:"market"`
+	Type   OrderType `json:"type"`
+	Price  float64   `json:"price,string"`
+	Amount float64   `json:"amount,string"`
 }
 
 // POST /v2/orders
