@@ -10,7 +10,7 @@ var timestamp = time.Unix(1632954488, 0)
 
 // See: https://developers.firi.com/#/authentication?id=hmac-encrypted-api-key
 func TestSigner(t *testing.T) {
-	expected := "d1845ce29857693063e7c1875dc513416b75747d617dbfe9a06f2b8ec87a4bc0"
+	expected := "21818f40878aad8ed30373d01ea7c5068f53ad47861a84dd3e6891f074ab681b"
 
 	signer := NewSigner("", "", secretKey)
 

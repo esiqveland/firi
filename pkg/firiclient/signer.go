@@ -36,12 +36,11 @@ func (s *signer) Sign(ts time.Time) (*SignedData, error) {
 
 	type body struct {
 		Timestamp      string `json:"timestamp"`
-		ValidForMillis int64  `json:"validity"`
+		ValidForMillis string `json:"validity"`
 	}
 	data, err := json.Marshal(&body{
-		Timestamp: strconv.FormatInt(ts.Unix(), 10),
-		//Timestamp:      ts.Unix(),
-		ValidForMillis: validForMillis,
+		Timestamp:      strconv.FormatInt(ts.Unix(), 10),
+		ValidForMillis: strconv.FormatInt(validForMillis, 10),
 	})
 	if err != nil {
 		return nil, err
