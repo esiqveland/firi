@@ -241,6 +241,45 @@ func (c *authClient) PostOrder(ctx context.Context, r *CreateOrderRequest) (*Cre
 	}
 }
 
+type CreateWithdrawalRequest struct {
+	Amount  string `json:"amount"`
+	Address string `json:"address"`
+}
+type CreateWithdrawalResponse struct{}
+
+// POST /v2/withdraw/:coin
+func (c *authClient) PostWithdrawal(ctx context.Context, coinId string, r *CreateWithdrawalRequest) (*CreateWithdrawalResponse, error) {
+	uri, err := c.baseurl.Parse("/v2/withdraw/" + coinId)
+	if err != nil {
+		return nil, err
+	}
+	data, err := json.Marshal(r)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", uri.String(), bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := c.doSigned(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == 200 || resp.StatusCode == 201 {
+		m := CreateWithdrawalResponse{}
+		err = json.Unmarshal(body, &m)
+		return &m, err
+	} else {
+		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
+	}
+}
+
 func (c *authClient) doSigned(r *http.Request) (*http.Response, error) {
 	now := time.Now()
 	sig, err := c.signer.Sign(now)

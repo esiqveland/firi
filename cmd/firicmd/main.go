@@ -13,9 +13,10 @@ import (
 	"github.com/esiqveland/firi/pkg/firiclient"
 )
 
-var secretKeyEnv = mustGetSecret("SECRET_KEY")
-var clientIdEnv = mustGetEnv("CLIENT_ID")
-var apiKeyEnv = mustGetEnv("API_KEY")
+var firiApiUrl = getEnv("FIRI_API_URL", "https://api.firi.com")
+var apiKeyEnv = mustGetEnv("FIRI_API_KEY")
+var clientIdEnv = mustGetEnv("FIRI_CLIENT_ID")
+var secretKeyEnv = mustGetSecret("FIRI_SECRET_KEY")
 
 func main() {
 	err := runMain()
@@ -33,6 +34,11 @@ func runMain() error {
 
 	root := logger.WithContext(context.Background())
 
+	baseUrl, err := url.Parse(firiApiUrl)
+	if err != nil {
+		return err
+	}
+
 	httpclient := &http.Client{Timeout: time.Second * 5}
 	signer := firiclient.NewSigner(
 		clientIdEnv,
@@ -40,51 +46,51 @@ func runMain() error {
 		secretKeyEnv,
 	)
 	publicClient := firiclient.New(
-		mustParseUrl("https://api.miraiex.com"),
+		baseUrl,
 		httpclient.Do,
 	)
 	c := firiclient.NewAuthenticatedClient(
-		mustParseUrl("https://api.miraiex.com"),
+		baseUrl,
 		signer,
 		publicClient,
 		httpclient.Do,
 	)
 
-	//marketsV1, err := c.GetMarketsV1(root)
-	//if err != nil {
+	// marketsV1, err := c.GetMarketsV1(root)
+	// if err != nil {
 	//	return err
-	//}
-	//log.Printf("MarketsV1=%+v", marketsV1)
+	// }
+	// log.Printf("MarketsV1=%+v", marketsV1)
 	//
-	//marketsV2, err := c.GetMarketsV2(root)
-	//if err != nil {
+	// marketsV2, err := c.GetMarketsV2(root)
+	// if err != nil {
 	//	return err
-	//}
-	//log.Printf("MarketsV2=%+v", marketsV2)
+	// }
+	// log.Printf("MarketsV2=%+v", marketsV2)
 	//
-	//orderbook, err := c.GetOrderbookV2(root, "BTCNOK")
-	//if err != nil {
+	// orderbook, err := c.GetOrderbookV2(root, "BTCNOK")
+	// if err != nil {
 	//	return err
-	//}
-	//log.Printf("OrderbookV2=%+v", orderbook)
+	// }
+	// log.Printf("OrderbookV2=%+v", orderbook)
 	//
-	//allTickersV2, err := c.GetMarketTickersV2(root)
-	//if err != nil {
+	// allTickersV2, err := c.GetMarketTickersV2(root)
+	// if err != nil {
 	//	return err
-	//}
-	//log.Printf("allTickersV2=%+v", allTickersV2)
+	// }
+	// log.Printf("allTickersV2=%+v", allTickersV2)
 	//
-	//tickerBTCNOK, err := c.GetMarketTickerV2(root, "BTCNOK")
-	//if err != nil {
+	// tickerBTCNOK, err := c.GetMarketTickerV2(root, "BTCNOK")
+	// if err != nil {
 	//	return err
-	//}
-	//log.Printf("tickerBTCNOK=%+v", tickerBTCNOK)
+	// }
+	// log.Printf("tickerBTCNOK=%+v", tickerBTCNOK)
 	//
-	//historyBTCNOK, err := c.GetMarketTradeHistoryV2(root, "BTCNOK")
-	//if err != nil {
+	// historyBTCNOK, err := c.GetMarketTradeHistoryV2(root, "BTCNOK")
+	// if err != nil {
 	//	return err
-	//}
-	//log.Printf("historyBTCNOK=%+v", historyBTCNOK)
+	// }
+	// log.Printf("historyBTCNOK=%+v", historyBTCNOK)
 
 	bal, err := c.GetBalancesV2(root)
 	if err != nil {
@@ -124,17 +130,25 @@ func mustParseUrl(uri string) *url.URL {
 func mustGetSecret(key string) []byte {
 	val := mustGetEnv(key)
 	return []byte(val)
-	//data, err := base64.StdEncoding.DecodeString(val)
-	//if err != nil {
+	// data, err := base64.StdEncoding.DecodeString(val)
+	// if err != nil {
 	//	log.Fatal().Msgf("Error decoding secret key in ENV: %v: %v", key, err)
-	//}
-	//return data
+	// }
+	// return data
 }
 
 func mustGetEnv(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
 		log.Fatal().Msgf("Must set ENV: %v", key)
+	}
+	return val
+}
+
+func getEnv(envVal string, defaultValue string) string {
+	val := os.Getenv(envVal)
+	if val == "" {
+		return defaultValue
 	}
 	return val
 }

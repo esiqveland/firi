@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/rs/xid"
 	"github.com/rs/zerolog"
 )
 
@@ -342,25 +343,43 @@ func (c *publicClient) do(r *http.Request) (*http.Response, error) {
 	log := zerolog.Ctx(r.Context())
 	start := time.Now()
 	uri := r.URL.String()
-	log.Info().Str("method", r.Method).Str("uri", uri).Msgf("%v: %v -->", r.Method, uri)
+	if r.Header.Get("x-request-id") == "" {
+		xId := xid.New().String()
+		r.Header.Set("x-request-id", xId)
+	}
+	xId := r.Header.Get("x-request-id")
+	log.Info().Str("method", r.Method).Str("uri", uri).Str("x-request-id", xId).Msgf("%v: %v -->", r.Method, uri)
 
 	res, err := c.doer(r)
 	elapsed := time.Since(start)
 	if err != nil {
-		log.Warn().
+		log.Error().
+			Err(err).
 			Str("method", r.Method).
 			Str("uri", uri).
 			Dur("elapsed", elapsed).
-			Err(err).
+			Str("x-request-id", xId).
 			Msgf("%v: %v <-- ERROR: %v", r.Method, uri, err)
 		return res, err
 	} else {
-		log.Info().
-			Str("method", r.Method).
-			Str("uri", uri).
-			Int("status", res.StatusCode).
-			Dur("elapsed", elapsed).
-			Msgf("%v: %v <-- %v in %vms", r.Method, uri, res.Status, elapsed.Milliseconds())
-		return res, err
+		if res.StatusCode > 300 {
+			log.Warn().
+				Str("method", r.Method).
+				Str("uri", uri).
+				Int("status", res.StatusCode).
+				Dur("elapsed", elapsed).
+				Str("x-request-id", xId).
+				Msgf("%v: %v <-- %v in %vms", r.Method, uri, res.Status, elapsed.Milliseconds())
+			return res, err
+		} else {
+			log.Info().
+				Str("method", r.Method).
+				Str("uri", uri).
+				Int("status", res.StatusCode).
+				Dur("elapsed", elapsed).
+				Str("x-request-id", xId).
+				Msgf("%v: %v <-- %v in %vms", r.Method, uri, res.Status, elapsed.Milliseconds())
+			return res, err
+		}
 	}
 }
