@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"os"
@@ -110,13 +111,70 @@ func runMain() error {
 	}
 	log.Printf("GetAllFilledAndClosedOrders=%+v", filled)
 
-	tradesHistory, err := c.GetAllTrades(root)
+	// tradesHistory, err := c.GetAllTrades(root)
+	// if err != nil {
+	// 	return err
+	// }
+	// log.Printf("GetAllTrades=%+v", tradesHistory)
+
+	history, err := c.GetDepositsHistory(root)
 	if err != nil {
 		return err
 	}
-	log.Printf("GetAllTrades=%+v", tradesHistory)
+	log.Printf("GetDepositsHistory=%+v", ToJsonString(history))
+
+	pendingTravelRule, err := c.GetPendingTravelRule(root)
+	if err != nil {
+		return err
+	}
+	log.Printf("GetPendingTravelRule=%+v", ToJsonString(pendingTravelRule))
+	if len(pendingTravelRule.Deposits) > 0 {
+		// take 1 and report it with vasp:
+		deposit := pendingTravelRule.Deposits[0]
+		log.Printf("Deposit=%+v", deposit)
+		depositId := deposit["id"].(string)
+		log.Printf("DepositId=%+v", depositId)
+		vasp, err := c.UpdateTravelRuleVasp(root, firiclient.UpdateTravelRuleVaspRequest{
+			DepositId: depositId,
+			VaspDid:   robovaspAccept.DID,
+			VaspName:  robovaspAccept.Name,
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("UpdateTravelRuleVasp=%+v", ToJsonString(vasp))
+	}
+
+	pendingTravelRuleOriginator, err := c.GetPendingTravelRuleOriginator(root)
+	if err != nil {
+		return err
+	}
+	log.Printf("GetPendingTravelRuleOriginator=%+v", ToJsonString(pendingTravelRuleOriginator))
+	if len(pendingTravelRuleOriginator.Deposits) > 0 {
+		deposit := pendingTravelRuleOriginator.Deposits[0]
+		log.Printf("GetPendingTravelRuleOriginator: Deposit=%+v", deposit)
+		depositId := deposit["id"].(string)
+		log.Printf("GetPendingTravelRuleOriginator: DepositId=%+v", depositId)
+		response1, err := c.UpdateTravelRuleOriginator(root, firiclient.UpdateTravelRuleOriginatorRequest{
+			DepositId: depositId,
+			//Kind:      firiclient.OriginatorKindMyself,
+			//Kind: "",
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("UpdateTravelRuleOriginator=%+v", ToJsonString(response1))
+	}
 
 	return nil
+}
+
+func ToJsonString(object any) string {
+	marshal, err := json.Marshal(object)
+	if err != nil {
+		panic(err)
+	}
+	return string(marshal)
 }
 
 func mustParseUrl(uri string) *url.URL {
@@ -151,4 +209,18 @@ func getEnv(envVal string, defaultValue string) string {
 		return defaultValue
 	}
 	return val
+}
+
+var robovaspAccept = newVasp("did:ethr:0x5cb7821acae54a5a94939fd35db91f4b11d8cd85", "RoboVASP Accept")
+
+type Vasp struct {
+	DID  string
+	Name string
+}
+
+func newVasp(did string, name string) Vasp {
+	return Vasp{
+		DID:  did,
+		Name: name,
+	}
 }

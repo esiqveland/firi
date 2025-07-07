@@ -262,6 +262,7 @@ func (c *authClient) PostWithdrawal(ctx context.Context, coinId string, r *Creat
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
 	resp, err := c.doSigned(req)
 	if err != nil {
 		return nil, err
@@ -275,6 +276,178 @@ func (c *authClient) PostWithdrawal(ctx context.Context, coinId string, r *Creat
 		m := CreateWithdrawalResponse{}
 		err = json.Unmarshal(body, &m)
 		return &m, err
+	} else {
+		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
+	}
+}
+
+func (c *authClient) GetDepositsHistory(ctx context.Context) (map[string]any, error) {
+	uri, err := c.baseurl.Parse("/v2/deposit/history")
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", uri.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.doSigned(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == 200 || resp.StatusCode == 201 {
+		m := map[string]any{}
+		err = json.Unmarshal(body, &m)
+		return m, err
+	} else {
+		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
+	}
+}
+
+type PendingTravelRuleResponse struct {
+	Deposits []map[string]any `json:"deposits"`
+}
+
+func (c *authClient) GetPendingTravelRule(ctx context.Context) (*PendingTravelRuleResponse, error) {
+	uri, err := c.baseurl.Parse("/v2/deposit/crypto/list/missingTravelRule")
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", uri.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.doSigned(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == 200 || resp.StatusCode == 201 {
+		m := PendingTravelRuleResponse{}
+		err = json.Unmarshal(body, &m)
+		return &m, err
+	} else {
+		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
+	}
+}
+
+func (c *authClient) GetPendingTravelRuleOriginator(ctx context.Context) (*PendingTravelRuleResponse, error) {
+	uri, err := c.baseurl.Parse("/v2/deposit/crypto/list/missingTravelRuleOriginator")
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "GET", uri.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.doSigned(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == 200 || resp.StatusCode == 201 {
+		m := PendingTravelRuleResponse{}
+		err = json.Unmarshal(body, &m)
+		return &m, err
+	} else {
+		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
+	}
+}
+
+type UpdateTravelRuleVaspRequest struct {
+	DepositId string `json:"depositId"`
+	VaspDid   string `json:"vaspDid"`
+	VaspName  string `json:"vaspName"`
+}
+
+func (c *authClient) UpdateTravelRuleVasp(ctx context.Context, request UpdateTravelRuleVaspRequest) (map[string]any, error) {
+	uri, err := c.baseurl.Parse("/v2/deposit/crypto/travelRule/vasp")
+	if err != nil {
+		return nil, err
+	}
+	data, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", uri.String(), bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.doSigned(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == 200 || resp.StatusCode == 201 {
+		m := map[string]any{}
+		err = json.Unmarshal(body, &m)
+		return m, err
+	} else {
+		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
+	}
+}
+
+type OriginatorKind string
+
+const OriginatorKindMyself OriginatorKind = "myself"
+
+type UpdateTravelRuleOriginatorRequest struct {
+	DepositId string         `json:"depositId"`
+	Kind      OriginatorKind `json:"kind"`
+}
+
+func (c *authClient) UpdateTravelRuleOriginator(ctx context.Context, request UpdateTravelRuleOriginatorRequest) (map[string]any, error) {
+	uri, err := c.baseurl.Parse("/v2/deposit/crypto/travelRule/originator")
+	if err != nil {
+		return nil, err
+	}
+	data, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequestWithContext(ctx, "POST", uri.String(), bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	resp, err := c.doSigned(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode == 200 || resp.StatusCode == 201 {
+		m := map[string]any{}
+		err = json.Unmarshal(body, &m)
+		return m, err
 	} else {
 		return nil, fmt.Errorf("%v: %v: status=%v body=%v", req.Method, uri.String(), resp.StatusCode, string(body))
 	}
